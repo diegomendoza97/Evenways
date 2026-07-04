@@ -78,32 +78,41 @@ struct HomeView: View {
     }
 
     private var splitListView: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                ForEach(splits) { split in
-                    NavigationLink(value: split) {
-                        SplitRowView(split: split)
-                    }
-                    .buttonStyle(.plain)
+        List {
+            ForEach(splits) { split in
+                ZStack {
+                    // Hidden link avoids the default List disclosure chevron
+                    // while keeping the custom card styling.
+                    NavigationLink(value: split) { EmptyView() }
+                        .opacity(0)
+                    SplitRowView(split: split)
                 }
-
-                NavigationLink {
-                    NewSplitSetupView()
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("New Split")
-                            .fontWeight(.semibold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(AppTheme.primary)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .padding(.top, 8)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
             }
-            .padding(16)
+            .onDelete(perform: deleteSplits)
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .safeAreaInset(edge: .bottom) {
+            NavigationLink {
+                NewSplitSetupView()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus.circle.fill")
+                    Text("New Split")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(AppTheme.primary)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+            .background(AppTheme.background)
         }
     }
 

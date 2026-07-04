@@ -110,7 +110,7 @@ struct TipTaxView: View {
                                             .clipShape(RoundedRectangle(cornerRadius: 8))
                                             .foregroundStyle(AppTheme.textPrimary)
                                             .onChange(of: customTip) { _, newValue in
-                                                if let value = Double(newValue) {
+                                                if let value = newValue.localeAwareDouble {
                                                     tipPercentage = value
                                                     selectedTipPreset = nil
                                                 }
@@ -141,7 +141,7 @@ struct TipTaxView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 8))
                                         .foregroundStyle(AppTheme.textPrimary)
                                         .onChange(of: customTax) { _, newValue in
-                                            if let value = Double(newValue) {
+                                            if let value = newValue.localeAwareDouble {
                                                 taxPercentage = value
                                             }
                                         }

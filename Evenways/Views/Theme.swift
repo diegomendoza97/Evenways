@@ -16,6 +16,26 @@ enum AppTheme {
     static let destructive = Color(hex: "EF4444")
 }
 
+extension String {
+    /// Parses a user-entered number using the current locale, accepting both
+    /// "." and "," as the decimal separator. Falls back to a plain parse so a
+    /// value typed with the "wrong" separator still works.
+    var localeAwareDouble: Double? {
+        let trimmed = trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = .current
+        if let number = formatter.number(from: trimmed) {
+            return number.doubleValue
+        }
+
+        let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+        return Double(normalized)
+    }
+}
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

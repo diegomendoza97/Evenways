@@ -43,6 +43,10 @@ struct SummaryView: View {
         split?.isEvenSplit ?? isEvenSplit ?? false
     }
 
+    private var resolvedDate: Date {
+        split?.date ?? .now
+    }
+
     private var subtotal: Double {
         resolvedItems.reduce(0) { $0 + $1.totalPrice }
     }
@@ -116,7 +120,7 @@ struct SummaryView: View {
                             .font(.title)
                             .fontWeight(.bold)
                             .foregroundStyle(AppTheme.textPrimary)
-                        Text("\(resolvedRestaurantName) · \(Date.now.formatted(.dateTime.month(.abbreviated).day()))")
+                        Text("\(resolvedRestaurantName) · \(resolvedDate.formatted(.dateTime.month(.abbreviated).day()))")
                             .font(.subheadline)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 6)

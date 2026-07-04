@@ -234,13 +234,12 @@ struct AddItemsView: View {
 
     private var canAddItem: Bool {
         !itemName.trimmingCharacters(in: .whitespaces).isEmpty
-        && Double(itemPrice) != nil
-        && (Double(itemPrice) ?? 0) > 0
+        && (itemPrice.localeAwareDouble ?? 0) > 0
     }
 
     private func addItem() {
         let trimmedName = itemName.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty, let price = Double(itemPrice), price > 0 else { return }
+        guard !trimmedName.isEmpty, let price = itemPrice.localeAwareDouble, price > 0 else { return }
         withAnimation {
             items.append(Item(name: trimmedName, price: price))
         }
