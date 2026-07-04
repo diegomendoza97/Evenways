@@ -57,6 +57,13 @@ Evenways/
 - Receipt scanning (OCR) to auto-import items
 - Broader OS version support and localization
 
+## Privacy
+
+Evenways collects no data — everything you enter stays on your device. The full
+privacy policy lives in [`docs/index.html`](docs/index.html) and, once GitHub
+Pages is enabled for the `docs/` folder, is served at
+`https://diegomendoza97.github.io/Evenways/`.
+
 ## License
 
 Released under the [MIT License](LICENSE).
