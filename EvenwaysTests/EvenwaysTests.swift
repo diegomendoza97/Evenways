@@ -62,6 +62,65 @@ final class EvenwaysTests: XCTestCase {
         XCTAssertEqual(item.pricePerPerson, 9, accuracy: 0.0001)
     }
 
+    // MARK: - Per-person unit counts
+
+    func testPortionSplitsProportionallyToUnits() {
+        // 3 mezcalitas at $180 = $540 total; Diego had 2, Ariana had 1.
+        let diego = Person(name: "Diego")
+        let ariana = Person(name: "Ariana")
+        let item = Item(name: "Mezcalita", price: 180, quantity: 3)
+        item.assignedPeople = [diego, ariana]
+        item.unitCounts[diego.id.uuidString] = 2
+        item.unitCounts[ariana.id.uuidString] = 1
+
+        XCTAssertEqual(item.totalUnits, 3)
+        XCTAssertEqual(item.portion(for: diego), 360, accuracy: 0.0001)
+        XCTAssertEqual(item.portion(for: ariana), 180, accuracy: 0.0001)
+    }
+
+    func testDefaultUnitsMatchEvenSplit() {
+        // With no explicit counts, each assignee is 1 unit -> even split.
+        let a = Person(name: "A")
+        let b = Person(name: "B")
+        let item = Item(name: "Nachos", price: 12)
+        item.assignedPeople = [a, b]
+
+        XCTAssertEqual(item.units(for: a), 1)
+        XCTAssertEqual(item.portion(for: a), item.pricePerPerson, accuracy: 0.0001)
+        XCTAssertEqual(item.portion(for: b), item.pricePerPerson, accuracy: 0.0001)
+    }
+
+    func testUnitsForUnassignedPersonIsZero() {
+        let a = Person(name: "A")
+        let stranger = Person(name: "Stranger")
+        let item = Item(name: "Soup", price: 10)
+        item.assignedPeople = [a]
+
+        XCTAssertEqual(item.units(for: stranger), 0)
+        XCTAssertEqual(item.portion(for: stranger), 0, accuracy: 0.0001)
+    }
+
+    func testWeightedAmountOwedSumsToTotal() {
+        let diego = Person(name: "Diego")
+        let ariana = Person(name: "Ariana")
+        let mezcal = Item(name: "Mezcalita", price: 180, quantity: 3)
+        mezcal.assignedPeople = [diego, ariana]
+        mezcal.unitCounts[diego.id.uuidString] = 2
+        mezcal.unitCounts[ariana.id.uuidString] = 1
+
+        let split = Split(
+            tipPercentage: 18,
+            taxPercentage: 8.875,
+            people: [diego, ariana],
+            items: [mezcal]
+        )
+
+        let sum = split.amountOwed(by: diego) + split.amountOwed(by: ariana)
+        XCTAssertEqual(sum, split.total, accuracy: 0.0001)
+        // Diego pays twice Ariana's share (2 units vs 1).
+        XCTAssertEqual(split.amountOwed(by: diego), 2 * split.amountOwed(by: ariana), accuracy: 0.0001)
+    }
+
     // MARK: - Split totals
 
     func testSubtotalSumsItemTotals() {

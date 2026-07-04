@@ -72,8 +72,7 @@ final class Split {
         }
 
         let personSubtotal = items
-            .filter { $0.assignedPeople.contains(where: { $0.id == person.id }) }
-            .reduce(0.0) { $0 + $1.pricePerPerson }
+            .reduce(0.0) { $0 + $1.portion(for: person) }
 
         return personSubtotal * multiplier
     }
@@ -99,6 +98,11 @@ final class Item {
     var quantity: Int
     var split: Split?
 
+    /// Per-person unit counts, keyed by `Person.id.uuidString`. A person absent
+    /// from this map (but present in `assignedPeople`) counts as 1 unit, so the
+    /// default behavior is an even split.
+    var unitCounts: [String: Int] = [:]
+
     @Relationship
     var assignedPeople: [Person]
 
@@ -118,5 +122,25 @@ final class Item {
     var pricePerPerson: Double {
         guard !assignedPeople.isEmpty else { return totalPrice }
         return totalPrice / Double(assignedPeople.count)
+    }
+
+    /// Units attributed to a person: 0 if unassigned, otherwise their stored
+    /// count (defaulting to 1). Never below 1 for an assigned person.
+    func units(for person: Person) -> Int {
+        guard assignedPeople.contains(where: { $0.id == person.id }) else { return 0 }
+        return max(unitCounts[person.id.uuidString] ?? 1, 1)
+    }
+
+    /// Total units across everyone assigned to this item.
+    var totalUnits: Int {
+        assignedPeople.reduce(0) { $0 + units(for: $1) }
+    }
+
+    /// The share of this item's cost owed by a person, proportional to their
+    /// units. Equals `pricePerPerson` when all assignees have equal counts.
+    func portion(for person: Person) -> Double {
+        let total = totalUnits
+        guard total > 0 else { return 0 }
+        return totalPrice * Double(units(for: person)) / Double(total)
     }
 }

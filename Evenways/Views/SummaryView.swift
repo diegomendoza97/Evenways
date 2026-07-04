@@ -75,8 +75,7 @@ struct SummaryView: View {
         }
 
         let personSubtotal = resolvedItems
-            .filter { $0.assignedPeople.contains(where: { $0.id == person.id }) }
-            .reduce(0.0) { $0 + $1.pricePerPerson }
+            .reduce(0.0) { $0 + $1.portion(for: person) }
 
         return personSubtotal * multiplier
     }
@@ -234,7 +233,10 @@ struct SummaryView: View {
                                             .foregroundStyle(AppTheme.textSecondary)
                                     }
                                     if !item.assignedPeople.isEmpty {
-                                        Text(item.assignedPeople.map(\.name).joined(separator: ", "))
+                                        Text(item.assignedPeople.map { person in
+                                            let units = item.units(for: person)
+                                            return units > 1 ? "\(person.name) ×\(units)" : person.name
+                                        }.joined(separator: ", "))
                                             .font(.caption)
                                             .foregroundStyle(AppTheme.neutral)
                                     }

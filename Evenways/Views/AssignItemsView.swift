@@ -57,38 +57,48 @@ struct AssignItemsView: View {
                                 }
 
                                 if item.assignedPeople.count > 1 {
-                                    Text("\(item.pricePerPerson, format: .currency(code: "USD")) per person")
-                                        .font(.caption)
-                                        .foregroundStyle(AppTheme.secondary)
+                                    if isUniformSplit(item) {
+                                        Text("\(item.pricePerPerson, format: .currency(code: "USD")) per person")
+                                            .font(.caption)
+                                            .foregroundStyle(AppTheme.secondary)
+                                    } else {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            ForEach(item.assignedPeople) { person in
+                                                Text("\(person.name) — \(item.portion(for: person), format: .currency(code: "USD"))")
+                                                    .font(.caption)
+                                                    .foregroundStyle(AppTheme.secondary)
+                                            }
+                                        }
+                                    }
                                 }
 
                                 // People chips
                                 FlowLayout(spacing: 8) {
                                     ForEach(people) { person in
-                                        let isSelected = item.assignedPeople.contains(where: { $0.id == person.id })
-                                        Button {
-                                            togglePerson(person, for: &item)
-                                        } label: {
-                                            HStack(spacing: 6) {
-                                                PersonInitialAvatar(name: person.name, size: 24)
-                                                Text(person.name)
-                                                    .font(.subheadline)
-                                                    .fontWeight(.medium)
+                                        if item.assignedPeople.contains(where: { $0.id == person.id }) {
+                                            selectedChip(person, item: $item)
+                                        } else {
+                                            Button {
+                                                select(person, for: &item)
+                                            } label: {
+                                                HStack(spacing: 6) {
+                                                    PersonInitialAvatar(name: person.name, size: 24)
+                                                    Text(person.name)
+                                                        .font(.subheadline)
+                                                        .fontWeight(.medium)
+                                                }
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 8)
+                                                .background(AppTheme.inputBackground)
+                                                .foregroundStyle(AppTheme.textPrimary)
+                                                .clipShape(Capsule())
+                                                .overlay(
+                                                    Capsule()
+                                                        .strokeBorder(AppTheme.border, lineWidth: 1)
+                                                )
                                             }
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 8)
-                                            .background(isSelected ? AppTheme.primary : AppTheme.inputBackground)
-                                            .foregroundStyle(isSelected ? .white : AppTheme.textPrimary)
-                                            .clipShape(Capsule())
-                                            .overlay(
-                                                Capsule()
-                                                    .strokeBorder(
-                                                        isSelected ? AppTheme.primary : AppTheme.border,
-                                                        lineWidth: 1
-                                                    )
-                                            )
+                                            .buttonStyle(.plain)
                                         }
-                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
@@ -157,11 +167,76 @@ struct AssignItemsView: View {
         .toolbarBackground(.visible, for: .navigationBar)
     }
 
-    private func togglePerson(_ person: Person, for item: inout Item) {
-        if let index = item.assignedPeople.firstIndex(where: { $0.id == person.id }) {
-            item.assignedPeople.remove(at: index)
+    @ViewBuilder
+    private func selectedChip(_ person: Person, item: Binding<Item>) -> some View {
+        HStack(spacing: 8) {
+            PersonInitialAvatar(name: person.name, size: 24)
+            Text(person.name)
+                .font(.subheadline)
+                .fontWeight(.medium)
+
+            HStack(spacing: 8) {
+                Button {
+                    decrement(person, for: item)
+                } label: {
+                    Image(systemName: item.wrappedValue.units(for: person) > 1 ? "minus" : "xmark")
+                        .font(.caption2.weight(.bold))
+                        .frame(width: 20, height: 20)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+
+                Text("\(item.wrappedValue.units(for: person))")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .frame(minWidth: 12)
+
+                Button {
+                    increment(person, for: item)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption2.weight(.bold))
+                        .frame(width: 20, height: 20)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.leading, 2)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(AppTheme.primary)
+        .foregroundStyle(.white)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(AppTheme.primary, lineWidth: 1)
+        )
+    }
+
+    private func isUniformSplit(_ item: Item) -> Bool {
+        let counts = item.assignedPeople.map { item.units(for: $0) }
+        guard let first = counts.first else { return true }
+        return counts.allSatisfy { $0 == first }
+    }
+
+    private func select(_ person: Person, for item: inout Item) {
+        guard !item.assignedPeople.contains(where: { $0.id == person.id }) else { return }
+        item.assignedPeople.append(person)
+        item.unitCounts[person.id.uuidString] = 1
+    }
+
+    private func increment(_ person: Person, for item: Binding<Item>) {
+        item.wrappedValue.unitCounts[person.id.uuidString] = item.wrappedValue.units(for: person) + 1
+    }
+
+    private func decrement(_ person: Person, for item: Binding<Item>) {
+        let current = item.wrappedValue.units(for: person)
+        if current <= 1 {
+            item.wrappedValue.assignedPeople.removeAll { $0.id == person.id }
+            item.wrappedValue.unitCounts[person.id.uuidString] = nil
         } else {
-            item.assignedPeople.append(person)
+            item.wrappedValue.unitCounts[person.id.uuidString] = current - 1
         }
     }
 }

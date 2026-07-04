@@ -276,8 +276,7 @@ struct TipTaxView: View {
         }
 
         let personSubtotal = items
-            .filter { $0.assignedPeople.contains(where: { $0.id == person.id }) }
-            .reduce(0.0) { $0 + $1.pricePerPerson }
+            .reduce(0.0) { $0 + $1.portion(for: person) }
 
         return personSubtotal * multiplier
     }
